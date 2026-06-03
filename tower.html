@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗼 黑塔副本</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',sans-serif;background:#0a0a0f;color:#fff;min-height:100vh;}
+.wrap{background:radial-gradient(ellipse at 50% 20%,#0d1a0d 0%,#0a0a0f 70%);min-height:100vh;padding:1.5rem 1rem 4rem;}
+
+/* 頂部 */
+.top-bar{display:flex;align-items:center;justify-content:space-between;max-width:720px;margin:0 auto 1.5rem;}
+.back-link{color:#555;font-size:0.82rem;text-decoration:none;transition:color 0.2s;}
+.back-link:hover{color:#aaa;}
+.tower-title{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,#6bcb77,#ffd93d,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.level-badge{font-size:0.82rem;color:#6bcb77;font-weight:700;background:rgba(107,203,119,0.1);border:1px solid rgba(107,203,119,0.3);padding:0.3rem 0.8rem;border-radius:50px;}
+
+/* 畫面切換 */
+.screen{display:none;max-width:720px;margin:0 auto;}
+.screen.active{display:block;}
+
+/* ── 準備畫面 ── */
+.prep-title{text-align:center;font-size:1.1rem;font-weight:700;color:#6bcb77;margin-bottom:1.5rem;}
+.prep-panel{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.25rem;margin-bottom:1rem;}
+.prep-label{font-size:0.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:0.75rem;}
+.word-input{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:0.6rem 0.85rem;color:#fff;font-size:1rem;font-family:'Noto Sans TC',sans-serif;margin-bottom:0.6rem;outline:none;transition:border-color 0.2s;}
+.word-input:focus{border-color:rgba(255,255,255,0.35);}
+.word-input::placeholder{color:#444;}
+.synth-btn{width:100%;padding:0.7rem;border-radius:10px;border:none;font-size:0.9rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all 0.2s;background:linear-gradient(135deg,#6bcb77,#4d96ff);color:#0a0a0f;}
+.synth-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(107,203,119,0.2);}
+.synth-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.or-divider{text-align:center;color:#333;font-size:0.75rem;margin:0.6rem 0;}
+.hall-pick-btn{width:100%;padding:0.55rem;border-radius:10px;border:1px dashed rgba(255,255,255,0.2);background:transparent;color:#777;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all 0.2s;}
+.hall-pick-btn:hover{border-color:rgba(255,255,255,0.4);color:#ccc;background:rgba(255,255,255,0.05);}
+.monster-preview{margin-top:1rem;background:rgba(255,255,255,0.05);border-radius:12px;padding:1rem;text-align:center;min-height:80px;display:flex;align-items:center;justify-content:center;}
+.monster-emoji-big{font-size:2.5rem;display:block;margin-bottom:0.25rem;}
+.monster-name{font-size:1rem;font-weight:700;}
+.monster-element{font-size:0.75rem;margin-top:0.2rem;}
+.monster-stats{display:flex;gap:0.5rem;justify-content:center;margin-top:0.4rem;font-size:0.72rem;}
+.stat-chip{background:rgba(255,255,255,0.1);border-radius:6px;padding:2px 8px;}
+.monster-desc{font-size:0.75rem;color:#999;margin-top:0.4rem;line-height:1.5;}
+.start-btn{width:100%;padding:0.9rem;border-radius:50px;border:none;font-size:1.1rem;font-weight:900;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all 0.2s;background:linear-gradient(135deg,#ffd93d,#6bcb77);color:#0a0a0f;letter-spacing:1px;margin-top:1rem;}
+.start-btn:hover:not(:disabled){transform:scale(1.03);box-shadow:0 8px 30px rgba(107,203,119,0.3);}
+.start-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none;}
+
+/* ── 戰鬥畫面 ── */
+.battle-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.floor-info{font-size:0.9rem;font-weight:700;color:#ffd93d;}
+.floor-type{font-size:0.72rem;color:#ff6b6b;margin-left:0.5rem;}
+
+.fighters-row{display:grid;grid-template-columns:1fr auto 1fr;gap:0.75rem;align-items:center;margin-bottom:1rem;}
+.fighter-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:0.75rem;text-align:center;}
+.fighter-card.player-card{border-color:rgba(107,203,119,0.3);}
+.fighter-card.enemy-card{border-color:rgba(255,107,107,0.3);}
+.fighter-card.boss-card{border-color:rgba(255,107,107,0.6);background:rgba(255,107,107,0.05);}
+.f-emoji{font-size:2.8rem;display:block;line-height:1;}
+.f-name{font-size:0.82rem;font-weight:700;margin:0.25rem 0 0.1rem;}
+.f-element{font-size:0.7rem;margin-bottom:0.3rem;}
+.hp-bar-wrap{background:rgba(255,255,255,0.1);border-radius:8px;height:8px;overflow:hidden;}
+.hp-bar{height:100%;border-radius:8px;transition:width 0.4s ease;}
+.hp-bar-player{background:linear-gradient(90deg,#6bcb77,#4d96ff);}
+.hp-bar-enemy{background:linear-gradient(90deg,#ff6b6b,#ff8e53);}
+.f-hp-text{font-size:0.65rem;color:#666;margin-top:0.2rem;}
+.vs-mid{text-align:center;font-size:1.2rem;font-weight:900;color:#ffd93d;}
+
+/* 屬性相剋提示 */
+.element-hint{text-align:center;font-size:0.75rem;margin-bottom:0.75rem;padding:0.4rem;border-radius:8px;}
+.hint-advantage{color:#6bcb77;background:rgba(107,203,119,0.1);}
+.hint-disadvantage{color:#ff6b6b;background:rgba(255,107,107,0.1);}
+.hint-neutral{color:#888;background:rgba(255,255,255,0.04);}
+
+/* 戰鬥 log */
+.battle-log{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:0.75rem;min-height:100px;max-height:160px;overflow-y:auto;margin-bottom:0.75rem;font-size:0.82rem;}
+.log-entry{padding:0.2rem 0;border-bottom:1px solid rgba(255,255,255,0.04);line-height:1.5;color:#bbb;}
+.log-entry:last-child{border-bottom:none;}
+.log-player{color:#6bcb77;}
+.log-enemy{color:#ff6b6b;}
+.log-system{color:#ffd93d;font-weight:700;}
+.log-boss{color:#ff6b6b;font-weight:900;}
+
+/* 技能冷卻顯示 */
+.ult-status{text-align:center;font-size:0.75rem;margin-bottom:0.6rem;}
+.ult-pip{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 2px;background:rgba(255,255,255,0.15);}
+.ult-pip.filled{background:#ffd93d;}
+
+/* 指令按鈕 */
+.cmd-row{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;}
+.cmd-btn{padding:0.65rem 0.5rem;border-radius:10px;border:none;font-size:0.85rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all 0.2s;}
+.cmd-btn:hover:not(:disabled){transform:translateY(-1px);}
+.cmd-btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+.cmd-normal{background:linear-gradient(135deg,#4d96ff,#845ef7);color:#fff;}
+.cmd-ult{background:linear-gradient(135deg,#ffd93d,#ff8e53);color:#0a0a0f;}
+.cmd-skip{grid-column:1/-1;background:rgba(255,255,255,0.07);color:#888;font-size:0.8rem;}
+
+/* 戰後選項 */
+.post-battle{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.25rem;text-align:center;}
+.post-title{font-size:1.1rem;font-weight:900;margin-bottom:0.25rem;}
+.post-title.win{color:#6bcb77;}
+.post-title.lose{color:#ff6b6b;}
+.post-desc{font-size:0.8rem;color:#888;margin-bottom:1rem;line-height:1.5;}
+.post-btns{display:flex;flex-direction:column;gap:0.5rem;}
+.post-btn{padding:0.7rem;border-radius:10px;border:none;font-size:0.9rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all 0.2s;}
+.post-btn-fusion{background:linear-gradient(135deg,#6bcb77,#4d96ff);color:#0a0a0f;}
+.post-btn-skip{background:rgba(255,255,255,0.07);color:#ccc;}
+.post-btn-retry{background:linear-gradient(135deg,#ff6b6b,#ff8e53);color:#fff;}
+.post-btn:hover{transform:scale(1.02);}
+.fusion-loading{color:#6bcb77;font-size:0.85rem;padding:0.5rem;}
+
+/* 登頂畫面 */
+.summit-wrap{text-align:center;padding:3rem 1rem;}
+.summit-emoji{font-size:5rem;display:block;margin-bottom:1rem;}
+.summit-title{font-size:2rem;font-weight:900;background:linear-gradient(135deg,#ffd93d,#6bcb77);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.5rem;}
+.summit-sub{color:#888;margin-bottom:2rem;font-size:0.9rem;}
+.summit-btn{padding:0.8rem 2rem;border-radius:50px;border:none;background:linear-gradient(135deg,#ffd93d,#ff6b6b);color:#0a0a0f;font-size:1rem;font-weight:900;font-family:'Noto Sans TC',sans-serif;cursor:pointer;}
+
+/* 名人堂 picker modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:100;}
+.modal{background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:1.5rem;max-width:340px;width:92%;max-height:80vh;overflow-y:auto;}
+.modal-title{font-size:1rem;font-weight:700;text-align:center;margin-bottom:1rem;color:#6bcb77;}
+.modal-btns{display:flex;flex-direction:column;gap:0.5rem;}
+.modal-card-btn{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.85rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all 0.2s;text-align:left;}
+.modal-card-btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(107,203,119,0.4);}
+.modal-cancel{background:rgba(255,255,255,0.05);color:#666;border:none;width:100%;padding:0.6rem;border-radius:10px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;margin-top:0.25rem;}
+
+.loading-msg{color:#777;font-size:0.85rem;}
+.error-msg{color:#ff6b6b;font-size:0.8rem;}
+
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes attackR{0%{transform:translateX(0) scale(1)}50%{transform:translateX(50px) scale(1.2)}100%{transform:translateX(0) scale(1)}}
+@keyframes attackL{0%{transform:translateX(0) scale(1)}50%{transform:translateX(-50px) scale(1.2)}100%{transform:translateX(0) scale(1)}}
+.shake{animation:shake 0.3s ease;}
+.atk-r{animation:attackR 0.4s ease;}
+.atk-l{animation:attackL 0.4s ease;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-bar">
+    <a class="back-link" href="index.html">← 回對戰大廳</a>
+    <div class="tower-title">🗼 黑塔副本</div>
+    <div class="level-badge" id="levelBadge">B1F</div>
+  </div>
+
+  <!-- 準備畫面 -->
+  <div class="screen active" id="screenPrep">
+    <div class="prep-title">選擇你的出戰怪獸，開始爬塔！</div>
+    <div class="prep-panel">
+      <div class="prep-label">合成新怪獸</div>
+      <input class="word-input" id="w1" placeholder="詞語一（例：阿嬤）" maxlength="10">
+      <input class="word-input" id="w2" placeholder="詞語二（例：加特林）" maxlength="10">
+      <button class="synth-btn" id="synthBtn" onclick="synthPlayer()">⚗️ 合成怪獸</button>
+      <div class="or-divider">── 或 ──</div>
+      <button class="hall-pick-btn" onclick="openHallModal()">🏆 從名人堂選出戰</button>
+      <div class="monster-preview" id="playerPreview">
+        <span style="color:#333;font-size:0.85rem">合成或選擇怪獸後開始爬塔</span>
+      </div>
+    </div>
+    <button class="start-btn" id="startBtn" disabled onclick="startTower()">🗼 進入黑塔！</button>
+  </div>
+
+  <!-- 戰鬥畫面 -->
+  <div class="screen" id="screenBattle">
+    <div class="battle-header">
+      <div>
+        <span class="floor-info" id="floorInfo">第 1 層</span>
+        <span class="floor-type" id="floorType"></span>
+      </div>
+      <div style="font-size:0.75rem;color:#555" id="playerWordTag"></div>
+    </div>
+
+    <div class="fighters-row">
+      <div class="fighter-card player-card" id="playerCard">
+        <span class="f-emoji" id="pEmoji">👾</span>
+        <div class="f-name"  id="pName">—</div>
+        <div class="f-element" id="pElement"></div>
+        <div class="hp-bar-wrap"><div class="hp-bar hp-bar-player" id="pHpBar" style="width:100%"></div></div>
+        <div class="f-hp-text" id="pHpText">HP —</div>
+      </div>
+      <div class="vs-mid">⚔️</div>
+      <div class="fighter-card enemy-card" id="enemyCard">
+        <span class="f-emoji" id="eEmoji">❓</span>
+        <div class="f-name"  id="eName">—</div>
+        <div class="f-element" id="eElement"></div>
+        <div class="hp-bar-wrap"><div class="hp-bar hp-bar-enemy" id="eHpBar" style="width:100%"></div></div>
+        <div class="f-hp-text" id="eHpText">HP —</div>
+      </div>
+    </div>
+
+    <div class="element-hint" id="elementHint"></div>
+
+    <div class="battle-log" id="battleLog"></div>
+
+    <div class="ult-status" id="ultStatus"></div>
+
+    <div class="cmd-row" id="cmdRow">
+      <button class="cmd-btn cmd-normal" id="btnNormal" onclick="doAction('normal')">⚔️ 普通攻擊</button>
+      <button class="cmd-btn cmd-ult"    id="btnUlt"    onclick="doAction('ult')">✨ 必殺技</button>
+      <button class="cmd-btn cmd-skip"                  onclick="doAction('skip')">💨 跳過（防禦）</button>
+    </div>
+
+    <!-- 戰後選項 -->
+    <div class="post-battle" id="postBattle" style="display:none"></div>
+  </div>
+
+  <!-- 登頂畫面 -->
+  <div class="screen" id="screenSummit">
+    <div class="summit-wrap">
+      <span class="summit-emoji">🏔️</span>
+      <div class="summit-title">恭喜登頂！</div>
+      <div class="summit-sub" id="summitSub"></div>
+      <button class="summit-btn" onclick="resetTower()">🔄 再挑戰一次</button>
+    </div>
+  </div>
+</div>
+
+<!-- 名人堂 Modal -->
+<div class="modal-overlay" id="hallModal" style="display:none" onclick="closeHallModal(event)">
+  <div class="modal">
+    <div class="modal-title">🏆 選擇名人堂怪獸出戰</div>
+    <div class="modal-btns" id="hallModalBtns"></div>
+    <button class="modal-cancel" onclick="closeHallModal()">取消</button>
+  </div>
+</div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzOaWLNxH1WqGFA6oWPlyWPj4GUw5SMxTeMdCHpvHEQuObycwsNvAzgQprQcTPUecZaBA/exec';
+const MAX_FLOOR = 100;
+
+// 五行相剋：beats[A] = B 表示 A 剋 B
+const BEATS = { 水:'火', 火:'草', 草:'土', 土:'電', 電:'水' };
+const ELEMENT_EMOJI = { 水:'💧', 火:'🔥', 草:'🌿', 土:'🪨', 電:'⚡' };
+
+// 詞庫 100 個
+const WORD_POOL = [
+  '阿嬤','班導師','地獄','便當','核彈','珍珠奶茶','機器人','外星人','消防車','老虎',
+  '電風扇','冰箱','牙醫','鈔票','手機','魔法師','恐龍','獅子','火車','飛機',
+  '潛水艇','超市','廁所','辦公室','圖書館','骨頭','蚊子','螃蟹','章魚','企鵝',
+  '北極熊','蟑螂','松鼠','貓頭鷹','蜘蛛','獨角獸','龍','鳳凰','殭屍','吸血鬼',
+  '忍者','海盜','武士','魔王','勇者','公主','騎士','巫師','弓箭手','盜賊',
+  '鋼琴','吉他','鼓組','小提琴','薩克斯風','花椰菜','榴槤','芭樂','鳳梨','蘋果',
+  '披薩','漢堡','壽司','拉麵','麻辣鍋','珍珠','鑽石','黃金','鐵','岩石',
+  '閃電','龍捲風','海嘯','火山','地震','太陽','月亮','星星','黑洞','彗星',
+  '蠟筆','橡皮擦','書包','鉛筆盒','水壺','掃把','拖把','吸塵器','洗衣機','烤箱',
+  '腳踏車','摩托車','坦克','直升機','火箭','潛艦','航空母艦','雷射砲','時光機','傳送門'
+];
+
+// 玩家狀態
+let player = null;      // { name, emoji, hp, maxHp, atk, baseAtk, element, word }
+let enemy  = null;
+let currentLevel = 1;
+let ultCooldown  = 0;
+let enemyDebuff  = false; // 嘲諷減防
+let battleActive = false;
+let playerWord   = '';   // 玩家當前代表名詞（融合用）
+
+// ── 工具 ──────────────────────────────────────────────
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function getElementRelation(pElem, eElem){
+  if(BEATS[pElem] === eElem) return 'advantage';
+  if(BEATS[eElem] === pElem) return 'disadvantage';
+  return 'neutral';
+}
+
+function calcDamage(baseAtk, relation, isDebuffed){
+  let mult = relation === 'advantage' ? 1.5 : relation === 'disadvantage' ? 0.7 : 1.0;
+  if(isDebuffed) mult *= 0.5;
+  return Math.round(baseAtk * mult * (0.85 + Math.random() * 0.3));
+}
+
+function gasPost(body){
+  return fetch(GAS_URL,{
+    method:'POST', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify(body)
+  }).then(r=>r.json());
+}
+
+function randomFrom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+// ── 準備畫面 ──────────────────────────────────────────
+async function synthPlayer(){
+  const w1 = document.getElementById('w1').value.trim();
+  const w2 = document.getElementById('w2').value.trim();
+  if(!w1||!w2){ alert('請輸入兩個詞語！'); return; }
+  const btn = document.getElementById('synthBtn');
+  btn.disabled=true; btn.textContent='⚗️ 合成中...';
+  document.getElementById('playerPreview').innerHTML='<span class="loading-msg">🔮 AI 正在亂點鴛鴦譜...</span>';
+  try{
+    const m = await gasPost({action:'synthesize', word1:w1, word2:w2});
+    if(m.error) throw new Error(m.error);
+    m.word1=w1; m.word2=w2;
+    setPlayerMonster(m, w1+'＋'+w2);
+    btn.textContent='✅ 合成完成';
+  } catch(e){
+    document.getElementById('playerPreview').innerHTML='<span class="error-msg">合成失敗，請重試</span>';
+    btn.disabled=false; btn.textContent='⚗️ 合成怪獸';
+  }
+}
+
+function setPlayerMonster(m, wordLabel){
+  playerWord = wordLabel || (m.word1&&m.word2 ? m.word1+'＋'+m.word2 : m.name);
+  player = {
+    name: m.name, emoji: m.emoji,
+    hp: m.hp, maxHp: m.hp,
+    atk: m.atk, baseAtk: m.atk,
+    element: m.element || '土',
+    skill: m.skill, skillDamage: m.skillDamage,
+    description: m.description
+  };
+  renderPlayerPreview(m);
+  document.getElementById('startBtn').disabled = false;
+}
+
+function renderPlayerPreview(m){
+  const elem = m.element || '土';
+  document.getElementById('playerPreview').innerHTML = `<div>
+    <span class="monster-emoji-big">${m.emoji}</span>
+    <div class="monster-name">${m.name}</div>
+    <div class="monster-element">${ELEMENT_EMOJI[elem]||''} ${elem}屬性</div>
+    <div class="monster-stats">
+      <span class="stat-chip">HP ${m.hp}</span>
+      <span class="stat-chip">ATK ${m.atk}</span>
+    </div>
+    <div class="monster-desc">${m.description||''}</div>
+  </div>`;
+}
+
+// 名人堂 modal
+function openHallModal(){
+  const hall = JSON.parse(localStorage.getItem('monsterHall')||'[]');
+  if(!hall.length){ alert('名人堂還沒有怪獸！'); return; }
+  const btns = document.getElementById('hallModalBtns');
+  btns.innerHTML = hall.map((m,i)=>`
+    <button class="modal-card-btn" onclick="pickHall(${i})">
+      <span style="font-size:1.5rem">${m.emoji}</span>
+      <div>
+        <div style="font-weight:700;font-size:0.9rem">${m.name}</div>
+        <div style="font-size:0.7rem;color:#888">HP ${m.hp} · ATK ${m.atk} · ${m.element||'？'}屬性</div>
+      </div>
+    </button>`).join('');
+  document.getElementById('hallModal').style.display='flex';
+}
+
+function pickHall(i){
+  const hall = JSON.parse(localStorage.getItem('monsterHall')||'[]');
+  closeHallModal();
+  setPlayerMonster(hall[i]);
+  document.getElementById('synthBtn').disabled=true;
+  document.getElementById('synthBtn').textContent='✅ 合成完成';
+}
+
+function closeHallModal(e){
+  if(e && e.target!==document.getElementById('hallModal')) return;
+  document.getElementById('hallModal').style.display='none';
+}
+
+// ── 開始爬塔 ──────────────────────────────────────────
+async function startTower(){
+  currentLevel = 1;
+  ultCooldown  = 0;
+  player.hp    = player.maxHp;
+  player.atk   = player.baseAtk;
+  showScreen('screenBattle');
+  updateLevelBadge();
+  await loadFloor();
+}
+
+async function loadFloor(){
+  battleActive = false;
+  enemyDebuff  = false;
+  document.getElementById('postBattle').style.display='none';
+  document.getElementById('battleLog').innerHTML='';
+  setCmdsEnabled(false);
+
+  const isBoss = currentLevel % 5 === 0;
+  document.getElementById('floorInfo').textContent = `第 ${currentLevel} 層`;
+  document.getElementById('floorType').textContent = isBoss ? '👹 魔王關！' : '';
+  document.getElementById('playerWordTag').textContent = `詞：${playerWord}`;
+
+  // 更新玩家面板
+  updatePlayerUI();
+
+  addLog(`⚔️ 第 ${currentLevel} 層${isBoss?'【魔王關】':''}，召喚敵人中...`, 'system');
+
+  // 生成敵人
+  let word, word2=null;
+  if(isBoss){
+    word  = randomFrom(WORD_POOL);
+    word2 = randomFrom(WORD_POOL.filter(w=>w!==word));
+  } else {
+    word = randomFrom(WORD_POOL);
+  }
+
+  try{
+    const e = await gasPost({action:'generateEnemy', word, level:currentLevel, isBoss, word2});
+    if(e.error) throw new Error(e.error);
+    enemy = { name:e.name, emoji:e.emoji, hp:e.hp, maxHp:e.hp, atk:e.atk, element:e.element||'火', description:e.description };
+
+    if(isBoss){
+      document.getElementById('enemyCard').className='fighter-card boss-card';
+    } else {
+      document.getElementById('enemyCard').className='fighter-card enemy-card';
+    }
+
+    document.getElementById('eEmoji').textContent  = enemy.emoji;
+    document.getElementById('eName').textContent   = enemy.name;
+    document.getElementById('eElement').textContent= `${ELEMENT_EMOJI[enemy.element]||''} ${enemy.element}`;
+    document.getElementById('eHpBar').style.width  = '100%';
+    document.getElementById('eHpText').textContent = `HP ${enemy.hp} / ${enemy.maxHp}`;
+
+    updateElementHint();
+    addLog(`${isBoss?'👹':'👾'} 出現了【${enemy.name}】！${enemy.description}`, isBoss?'boss':'enemy');
+
+    battleActive = true;
+    setCmdsEnabled(true);
+    updateUltUI();
+  } catch(err){
+    addLog('敵人召喚失敗，請重試', 'system');
+    const retry = document.getElementById('postBattle');
+    retry.style.display='block';
+    retry.innerHTML=`<div class="post-title lose">召喚失敗</div>
+      <div class="post-btns"><button class="post-btn post-btn-retry" onclick="loadFloor()">🔄 重試</button></div>`;
+  }
+}
+
+// ── 戰鬥指令 ──────────────────────────────────────────
+async function doAction(type){
+  if(!battleActive) return;
+  setCmdsEnabled(false);
+
+  const relation = getElementRelation(player.element, enemy.element);
+
+  if(type==='normal'){
+    const dmg = calcDamage(player.atk, relation, false);
+    enemy.hp = Math.max(0, enemy.hp - dmg);
+    addLog(`🗡️ ${player.name} 發動普通攻擊！造成 ${dmg} 傷害`, 'player');
+    animateFighter('pEmoji','atk-r');
+    await sleep(300);
+    animateFighter('eEmoji','shake');
+    updateEnemyHpBar();
+    ultCooldown = Math.min(ultCooldown+1, 2);
+
+  } else if(type==='ult'){
+    if(ultCooldown < 2){ setCmdsEnabled(true); return; }
+    const success = Math.random() < 0.5;
+    const mult    = success ? 2 : 1;
+    const dmg     = calcDamage(player.atk * mult, relation, false);
+    enemy.hp = Math.max(0, enemy.hp - dmg);
+    addLog(`✨ ${player.name} 發動必殺技！${success?'完美命中！':'失手了！'}造成 ${dmg} 傷害`, 'player');
+    animateFighter('pEmoji','atk-r');
+    await sleep(300);
+    animateFighter('eEmoji','shake');
+    updateEnemyHpBar();
+    ultCooldown = 0;
+
+  } else if(type==='skip'){
+    addLog(`🛡️ ${player.name} 選擇防禦，蓄力中...`, 'player');
+    ultCooldown = Math.min(ultCooldown+1, 2);
+  }
+
+  updateUltUI();
+  await sleep(600);
+
+  if(enemy.hp <= 0){
+    await winRound(); return;
+  }
+
+  // 敵人回合
+  await sleep(400);
+  const eRelation = getElementRelation(enemy.element, player.element);
+  const eDmg = calcDamage(enemy.atk, eRelation, enemyDebuff);
+  enemyDebuff = false;
+  player.hp = Math.max(0, player.hp - eDmg);
+  addLog(`💢 ${enemy.name} 反擊！造成 ${eDmg} 傷害`, 'enemy');
+  animateFighter('eEmoji','atk-l');
+  await sleep(300);
+  animateFighter('pEmoji','shake');
+  updatePlayerHpBar();
+  await sleep(500);
+
+  if(player.hp <= 0){
+    await loseRound(); return;
+  }
+
+  setCmdsEnabled(true);
+}
+
+// ── 勝負 ──────────────────────────────────────────────
+async function winRound(){
+  battleActive = false;
+  addLog(`🎉 ${enemy.name} 被擊敗！`, 'system');
+
+  if(currentLevel >= MAX_FLOOR){
+    await sleep(800);
+    showSummit(); return;
+  }
+
+  const relation  = getElementRelation(player.element, enemy.element);
+  const isPositive= relation === 'advantage' || relation === 'neutral';
+  const atkBonus  = isPositive ? 1.2 : 0.9;
+
+  const post = document.getElementById('postBattle');
+  post.style.display='block';
+  post.innerHTML = `
+    <div class="post-title win">🎉 勝利！第 ${currentLevel} 層通關</div>
+    <div class="post-desc">
+      ${enemy.name} 已倒下。<br>
+      ${isPositive ? '順向融合可使 ATK 永久 +20%！' : '⚠️ 逆向融合（屬性不合），ATK 會 -10%。'}
+    </div>
+    <div class="post-btns">
+      <button class="post-btn post-btn-fusion" onclick="doFusion(${isPositive})">
+        🧬 融合【${enemy.name}】（ATK ${isPositive?'+20%':'-10%'}）
+      </button>
+      <button class="post-btn post-btn-skip" onclick="nextFloor()">
+        ➡️ 跳過融合，繼續爬塔
+      </button>
+    </div>`;
+}
+
+async function doFusion(isPositive){
+  const post = document.getElementById('postBattle');
+  post.innerHTML='<div class="fusion-loading">🧬 AI 正在進行基因融合...</div>';
+
+  // 從敵人名字取詞（用名字本身）
+  const enemyWord = enemy.name;
+
+  try{
+    const result = await gasPost({
+      action:'fusionMonster',
+      playerWord: playerWord,
+      enemyWord:  enemyWord,
+      isNegative: !isPositive
+    });
+    if(result.error) throw new Error(result.error);
+
+    // 更新玩家
+    const atkMult   = isPositive ? 1.2 : 0.9;
+    player.baseAtk  = Math.round(player.baseAtk * atkMult);
+    player.atk      = player.baseAtk;
+    player.name     = result.name;
+    player.emoji    = result.emoji;
+    player.element  = result.element || player.element;
+    player.description = result.description;
+    playerWord      = result.newWord || result.name;
+
+    updatePlayerUI();
+
+    post.innerHTML = `
+      <div class="post-title win">✅ 融合完成！</div>
+      <div class="post-desc">
+        <span style="font-size:1.5rem">${result.emoji}</span><br>
+        <strong>${result.name}</strong> 誕生！<br>
+        ${result.description}<br><br>
+        ATK ${isPositive?'+20%（順向）':'-10%（逆向）'} → 現在 ATK: ${player.atk}
+      </div>
+      <div class="post-btns">
+        <button class="post-btn post-btn-skip" onclick="nextFloor()">➡️ 繼續爬塔</button>
+      </div>`;
+  } catch(err){
+    post.innerHTML=`<div class="error-msg">融合失敗：${err.message}</div>
+      <div class="post-btns">
+        <button class="post-btn post-btn-skip" onclick="nextFloor()">➡️ 跳過，繼續爬塔</button>
+      </div>`;
+  }
+}
+
+async function loseRound(){
+  battleActive = false;
+  addLog(`💀 ${player.name} 力竭倒下...`, 'system');
+  const post = document.getElementById('postBattle');
+  post.style.display='block';
+  post.innerHTML=`
+    <div class="post-title lose">💀 挑戰失敗</div>
+    <div class="post-desc">在第 ${currentLevel} 層被 ${enemy.name} 擊敗了。</div>
+    <div class="post-btns">
+      <button class="post-btn post-btn-retry" onclick="resetTower()">🔄 重新挑戰</button>
+    </div>`;
+}
+
+function nextFloor(){
+  currentLevel++;
+  updateLevelBadge();
+  loadFloor();
+}
+
+function showSummit(){
+  showScreen('screenSummit');
+  document.getElementById('summitSub').textContent =
+    `你用【${player.name}】${player.emoji} 踏上了第 ${MAX_FLOOR} 層的頂端！\n最終 ATK: ${player.atk}`;
+}
+
+function resetTower(){
+  player = null; enemy = null;
+  currentLevel = 1; ultCooldown = 0;
+  document.getElementById('w1').value='';
+  document.getElementById('w2').value='';
+  document.getElementById('synthBtn').disabled=false;
+  document.getElementById('synthBtn').textContent='⚗️ 合成怪獸';
+  document.getElementById('startBtn').disabled=true;
+  document.getElementById('playerPreview').innerHTML='<span style="color:#333;font-size:0.85rem">合成或選擇怪獸後開始爬塔</span>';
+  updateLevelBadge();
+  showScreen('screenPrep');
+}
+
+// ── UI 更新 ───────────────────────────────────────────
+function updatePlayerUI(){
+  document.getElementById('pEmoji').textContent   = player.emoji;
+  document.getElementById('pName').textContent    = player.name;
+  document.getElementById('pElement').textContent = `${ELEMENT_EMOJI[player.element]||''} ${player.element}`;
+  updatePlayerHpBar();
+}
+
+function updatePlayerHpBar(){
+  const pct = Math.max(0, Math.round(player.hp/player.maxHp*100));
+  document.getElementById('pHpBar').style.width  = pct+'%';
+  document.getElementById('pHpText').textContent = `HP ${player.hp} / ${player.maxHp}`;
+}
+
+function updateEnemyHpBar(){
+  const pct = Math.max(0, Math.round(enemy.hp/enemy.maxHp*100));
+  document.getElementById('eHpBar').style.width  = pct+'%';
+  document.getElementById('eHpText').textContent = `HP ${enemy.hp} / ${enemy.maxHp}`;
+}
+
+function updateElementHint(){
+  const rel   = getElementRelation(player.element, enemy.element);
+  const hint  = document.getElementById('elementHint');
+  if(rel==='advantage'){
+    hint.className='element-hint hint-advantage';
+    hint.textContent=`✅ ${player.element} 剋 ${enemy.element}！傷害 ×1.5`;
+  } else if(rel==='disadvantage'){
+    hint.className='element-hint hint-disadvantage';
+    hint.textContent=`⚠️ ${enemy.element} 剋 ${player.element}！受到傷害 ×1.5`;
+  } else {
+    hint.className='element-hint hint-neutral';
+    hint.textContent=`同屬或無相剋，傷害正常`;
+  }
+}
+
+function updateUltUI(){
+  const el = document.getElementById('ultStatus');
+  let pips = '';
+  for(let i=0;i<2;i++) pips+=`<span class="ult-pip${i<ultCooldown?' filled':''}"></span>`;
+  el.innerHTML = `必殺技蓄力：${pips} ${ultCooldown>=2?'<span style="color:#ffd93d">★ 可用！</span>':''}`;
+  document.getElementById('btnUlt').disabled = ultCooldown < 2;
+}
+
+function setCmdsEnabled(on){
+  ['btnNormal','btnUlt'].forEach(id=>{
+    document.getElementById(id).disabled = !on;
+  });
+  document.querySelectorAll('.cmd-skip').forEach(b=>b.disabled=!on);
+  if(on) updateUltUI();
+}
+
+function addLog(msg, type){
+  const log   = document.getElementById('battleLog');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry' + (type?' log-'+type:'');
+  entry.textContent = msg;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+function animateFighter(id, cls){
+  const el = document.getElementById(id);
+  el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls), 450);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function updateLevelBadge(){
+  document.getElementById('levelBadge').textContent = `B${currentLevel}F`;
+}
+</script>
+</body>
+</html>
