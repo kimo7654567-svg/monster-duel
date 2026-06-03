@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👾 怪獸合成對戰</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans TC', sans-serif; background: #0a0a0f; color: #fff; min-height: 100vh; overflow-x: hidden; }
+.arena { background: radial-gradient(ellipse at 50% 30%, #1a0a2e 0%, #0a0a0f 70%); min-height: 100vh; padding: 2rem 1rem 4rem; }
+
+.title { text-align: center; font-size: 2.2rem; font-weight: 900; letter-spacing: -1px; background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.25rem; }
+.subtitle { text-align: center; color: #666; font-size: 0.85rem; margin-bottom: 2.5rem; }
+
+.input-arena { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: start; max-width: 720px; margin: 0 auto 1.5rem; }
+.vs-badge { display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ffd93d; padding-top: 2.2rem; }
+.player-panel { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.25rem; }
+.player-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #666; margin-bottom: 0.75rem; }
+.word-input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 0.6rem 0.85rem; color: #fff; font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; margin-bottom: 0.6rem; outline: none; transition: border-color 0.2s; }
+.word-input:focus { border-color: rgba(255,255,255,0.35); }
+.word-input::placeholder { color: #444; }
+
+.synth-btn { width: 100%; padding: 0.7rem; border-radius: 10px; border: none; font-size: 0.9rem; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; transition: all 0.2s; }
+.synth-btn-a { background: linear-gradient(135deg, #ff6b6b, #ff8e53); color: #fff; }
+.synth-btn-b { background: linear-gradient(135deg, #4d96ff, #845ef7); color: #fff; }
+.synth-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,255,255,0.1); }
+.synth-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.monster-preview { margin-top: 1rem; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; text-align: center; min-height: 90px; display: flex; align-items: center; justify-content: center; }
+.monster-emoji-big { font-size: 2.5rem; display: block; margin-bottom: 0.25rem; }
+.monster-name { font-size: 1rem; font-weight: 700; }
+.monster-skill-tag { font-size: 0.75rem; color: #ffd93d; margin-top: 0.3rem; }
+.monster-stats { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.4rem; font-size: 0.72rem; }
+.stat-chip { background: rgba(255,255,255,0.1); border-radius: 6px; padding: 2px 8px; }
+.monster-desc { font-size: 0.75rem; color: #999; margin-top: 0.5rem; line-height: 1.5; }
+
+.battle-btn-wrap { text-align: center; margin-bottom: 2rem; }
+.battle-btn { background: linear-gradient(135deg, #ffd93d, #ff6b6b); color: #0a0a0f; font-size: 1.2rem; font-weight: 900; font-family: 'Noto Sans TC', sans-serif; padding: 0.9rem 3rem; border-radius: 50px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
+.battle-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 8px 30px rgba(255,215,61,0.35); }
+.battle-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+.battle-hint { margin-top: 0.5rem; font-size: 0.75rem; color: #555; }
+
+.battle-stage { max-width: 720px; margin: 0 auto; }
+.fighters { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }
+.fighter { text-align: center; }
+.fighter-emoji { font-size: 4rem; display: block; line-height: 1; margin-bottom: 0.3rem; }
+.fighter-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.4rem; }
+.hp-bar-wrap { background: rgba(255,255,255,0.1); border-radius: 10px; height: 10px; overflow: hidden; }
+.hp-bar { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+.hp-bar-a { background: linear-gradient(90deg, #ff6b6b, #ff8e53); }
+.hp-bar-b { background: linear-gradient(90deg, #4d96ff, #845ef7); }
+.hp-text { font-size: 0.72rem; color: #666; margin-top: 0.3rem; }
+.vs-center { text-align: center; font-size: 1.5rem; font-weight: 900; color: #ffd93d; }
+
+.battle-log { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 1rem; min-height: 130px; max-height: 220px; overflow-y: auto; margin-bottom: 1rem; }
+.log-entry { font-size: 0.85rem; color: #bbb; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); line-height: 1.5; }
+.log-entry:last-child { border-bottom: none; }
+.log-skill { color: #ffd93d !important; font-weight: 700; }
+.log-win { color: #6bcb77 !important; font-weight: 900; font-size: 1rem; text-align: center; padding: 0.5rem; }
+
+.result-panel { text-align: center; padding: 1.5rem; background: rgba(255,255,255,0.04); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
+.winner-emoji { font-size: 4rem; display: block; margin-bottom: 0.5rem; }
+.winner-text { font-size: 1.5rem; font-weight: 900; background: linear-gradient(135deg, #ffd93d, #6bcb77); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.4rem; }
+.finish-move { font-size: 0.9rem; color: #ff6b6b; margin-bottom: 1.2rem; font-weight: 700; }
+.action-btns { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.save-btn { padding: 0.6rem 1.4rem; border-radius: 50px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #ccc; cursor: pointer; font-size: 0.85rem; font-family: 'Noto Sans TC', sans-serif; transition: all 0.2s; }
+.save-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.replay-btn { padding: 0.6rem 1.4rem; border-radius: 50px; border: none; background: linear-gradient(135deg, #ffd93d, #ff6b6b); color: #0a0a0f; cursor: pointer; font-size: 0.85rem; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; transition: all 0.2s; }
+.replay-btn:hover { transform: scale(1.05); }
+
+.hall-section { max-width: 720px; margin: 2.5rem auto 0; }
+.hall-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #555; margin-bottom: 1rem; text-align: center; }
+.hall-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.75rem; }
+.hall-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0.75rem 0.5rem; text-align: center; cursor: default; transition: all 0.2s; }
+.hall-card:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
+.hall-card-emoji { font-size: 2rem; line-height: 1; }
+.hall-card-name { font-size: 0.7rem; font-weight: 700; margin-top: 0.3rem; color: #ccc; }
+.hall-card-hp { font-size: 0.62rem; color: #555; margin-top: 2px; }
+.hall-empty { text-align: center; color: #444; font-size: 0.85rem; padding: 1.5rem; }
+
+.error-msg { color: #ff6b6b; font-size: 0.8rem; }
+.loading-msg { color: #888; font-size: 0.85rem; }
+
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+@keyframes attackLeft { 0%{transform:translateX(0) scale(1)} 50%{transform:translateX(70px) scale(1.25)} 100%{transform:translateX(0) scale(1)} }
+@keyframes attackRight { 0%{transform:translateX(0) scale(1)} 50%{transform:translateX(-70px) scale(1.25)} 100%{transform:translateX(0) scale(1)} }
+.shake { animation: shake 0.35s ease; }
+.attack-a { animation: attackLeft 0.45s ease; }
+.attack-b { animation: attackRight 0.45s ease; }
+
+@media (max-width: 560px) {
+  .input-arena { grid-template-columns: 1fr; }
+  .vs-badge { padding-top: 0; }
+  .fighters { grid-template-columns: 1fr auto 1fr; }
+  .fighter-emoji { font-size: 2.8rem; }
+  .title { font-size: 1.6rem; }
+}
+</style>
+</head>
+<body>
+<div class="arena">
+  <h1 class="title">👾 怪獸合成對戰</h1>
+  <p class="subtitle">輸入兩個八竿子打不著的詞，召喚你的怪獸來決鬥！</p>
+
+  <!-- 輸入區 -->
+  <div class="input-arena">
+    <div class="player-panel">
+      <div class="player-label">🔴 玩家 A</div>
+      <input class="word-input" id="a1" placeholder="詞語一（例：阿嬤）" maxlength="10">
+      <input class="word-input" id="a2" placeholder="詞語二（例：加特林）" maxlength="10">
+      <button class="synth-btn synth-btn-a" id="synthA" onclick="synthesize('A')">⚗️ 合成怪獸 A</button>
+      <div class="monster-preview" id="previewA">
+        <span class="loading-msg" style="color:#333">輸入詞語後合成</span>
+      </div>
+    </div>
+
+    <div class="vs-badge">VS</div>
+
+    <div class="player-panel">
+      <div class="player-label">🔵 玩家 B</div>
+      <input class="word-input" id="b1" placeholder="詞語一（例：珍珠奶茶）" maxlength="10">
+      <input class="word-input" id="b2" placeholder="詞語二（例：核彈）" maxlength="10">
+      <button class="synth-btn synth-btn-b" id="synthB" onclick="synthesize('B')">⚗️ 合成怪獸 B</button>
+      <div class="monster-preview" id="previewB">
+        <span class="loading-msg" style="color:#333">輸入詞語後合成</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 開打按鈕 -->
+  <div class="battle-btn-wrap">
+    <button class="battle-btn" id="battleBtn" disabled onclick="startBattle()">⚔️ 開打！</button>
+    <div class="battle-hint" id="battleHint">請先合成兩隻怪獸</div>
+  </div>
+
+  <!-- 戰鬥舞台 -->
+  <div class="battle-stage" id="battleStage" style="display:none">
+    <div class="fighters">
+      <div class="fighter" id="fighterA">
+        <span class="fighter-emoji" id="emojiA">❓</span>
+        <div class="fighter-name" id="nameA">—</div>
+        <div class="hp-bar-wrap"><div class="hp-bar hp-bar-a" id="hpBarA" style="width:100%"></div></div>
+        <div class="hp-text" id="hpTextA">HP: —</div>
+      </div>
+      <div class="vs-center">⚡</div>
+      <div class="fighter" id="fighterB">
+        <span class="fighter-emoji" id="emojiB">❓</span>
+        <div class="fighter-name" id="nameB">—</div>
+        <div class="hp-bar-wrap"><div class="hp-bar hp-bar-b" id="hpBarB" style="width:100%"></div></div>
+        <div class="hp-text" id="hpTextB">HP: —</div>
+      </div>
+    </div>
+
+    <div class="battle-log" id="battleLog"></div>
+
+    <div id="resultPanel" style="display:none" class="result-panel">
+      <span class="winner-emoji" id="winnerEmoji"></span>
+      <div class="winner-text" id="winnerText"></div>
+      <div class="finish-move" id="finishMove"></div>
+      <div class="action-btns">
+        <button class="save-btn" onclick="saveToHall('A')">💾 收藏 A</button>
+        <button class="save-btn" onclick="saveToHall('B')">💾 收藏 B</button>
+        <button class="replay-btn" onclick="resetGame()">🔄 再來一局</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 名人堂 -->
+  <div class="hall-section">
+    <div class="hall-title">🏆 名人堂圖鑑</div>
+    <div class="hall-grid" id="hallGrid"></div>
+  </div>
+</div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzOaWLNxH1WqGFA6oWPlyWPj4GUw5SMxTeMdCHpvHEQuObycwsNvAzgQprQcTPUecZaBA/exec';
+
+let monsterA = null;
+let monsterB = null;
+let currentHpA = 0, currentHpB = 0;
+let maxHpA = 0, maxHpB = 0;
+
+// ── 合成怪獸 ──────────────────────────────────────────
+async function synthesize(player) {
+  const w1 = document.getElementById(player === 'A' ? 'a1' : 'b1').value.trim();
+  const w2 = document.getElementById(player === 'A' ? 'a2' : 'b2').value.trim();
+  if (!w1 || !w2) { alert('請輸入兩個詞語！'); return; }
+
+  const btn     = document.getElementById('synth' + player);
+  const preview = document.getElementById('preview' + player);
+
+  btn.disabled    = true;
+  btn.textContent = '⚗️ 合成中...';
+  preview.innerHTML = '<span class="loading-msg">🔮 AI 正在亂點鴛鴦譜...</span>';
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'synthesize', word1: w1, word2: w2 })
+    });
+    const monster = await res.json();
+    if (monster.error) throw new Error(monster.error);
+
+    if (player === 'A') monsterA = monster;
+    else                monsterB = monster;
+
+    preview.innerHTML = `
+      <div>
+        <span class="monster-emoji-big">${monster.emoji}</span>
+        <div class="monster-name">${monster.name}</div>
+        <div class="monster-skill-tag">必殺技：${monster.skill}（傷害 ${monster.skillDamage}）</div>
+        <div class="monster-stats">
+          <span class="stat-chip">HP ${monster.hp}</span>
+          <span class="stat-chip">ATK ${monster.atk}</span>
+        </div>
+        <div class="monster-desc">${monster.description}</div>
+      </div>`;
+
+    btn.textContent = '✅ 合成完成';
+    checkBattleReady();
+  } catch (err) {
+    preview.innerHTML = `<span class="error-msg">合成失敗：${err.message}<br>請重試</span>`;
+    btn.disabled    = false;
+    btn.textContent = player === 'A' ? '⚗️ 合成怪獸 A' : '⚗️ 合成怪獸 B';
+  }
+}
+
+function checkBattleReady() {
+  const ready = !!(monsterA && monsterB);
+  document.getElementById('battleBtn').disabled = !ready;
+  document.getElementById('battleHint').textContent =
+    ready ? '⚡ 兩隻怪獸就位，準備開打！' : '請先合成兩隻怪獸';
+}
+
+// ── 開始戰鬥 ──────────────────────────────────────────
+async function startBattle() {
+  const btn = document.getElementById('battleBtn');
+  btn.disabled    = true;
+  btn.textContent = '⚔️ AI 判定中...';
+
+  const stage = document.getElementById('battleStage');
+  stage.style.display = 'block';
+  document.getElementById('resultPanel').style.display = 'none';
+
+  // 初始化戰鬥舞台
+  document.getElementById('emojiA').textContent = monsterA.emoji;
+  document.getElementById('nameA').textContent  = monsterA.name;
+  document.getElementById('emojiB').textContent = monsterB.emoji;
+  document.getElementById('nameB').textContent  = monsterB.name;
+  maxHpA = monsterA.hp; maxHpB = monsterB.hp;
+  currentHpA = maxHpA; currentHpB = maxHpB;
+  updateHpBars();
+
+  const log = document.getElementById('battleLog');
+  log.innerHTML = '<div class="log-entry">⏳ AI 正在規劃戰鬥劇本...</div>';
+  stage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'battle', monsterA, monsterB })
+    });
+    const script = await res.json();
+    if (script.error) throw new Error(script.error);
+
+    log.innerHTML = '';
+    btn.textContent = '⚔️ 戰鬥中...';
+    await playBattle(script);
+  } catch (err) {
+    log.innerHTML = `<div class="log-entry error-msg">戰鬥判定失敗：${err.message}</div>`;
+    btn.disabled    = false;
+    btn.textContent = '⚔️ 開打！';
+  }
+}
+
+// ── 播放戰鬥動畫 ──────────────────────────────────────
+async function playBattle(script) {
+  const log = document.getElementById('battleLog');
+
+  for (const round of script.rounds) {
+    await sleep(850);
+
+    const isA    = round.attacker === 'A';
+    const atkEl  = document.getElementById(isA ? 'emojiA' : 'emojiB');
+    const defEl  = document.getElementById(isA ? 'emojiB' : 'emojiA');
+    const attName = isA ? monsterA.name : monsterB.name;
+
+    atkEl.classList.add(isA ? 'attack-a' : 'attack-b');
+    await sleep(220);
+    defEl.classList.add('shake');
+
+    if (isA) currentHpB = Math.max(0, currentHpB - round.damage);
+    else     currentHpA = Math.max(0, currentHpA - round.damage);
+    updateHpBars();
+
+    const entry = document.createElement('div');
+    entry.className = 'log-entry' + (round.isSkill ? ' log-skill' : '');
+    const icon = isA ? '🔴' : '🔵';
+    const skillMark = round.isSkill ? '✨ ' : '';
+    entry.textContent = `${icon} ${attName}：${skillMark}${round.move}（-${round.damage}）`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+
+    await sleep(380);
+    atkEl.classList.remove('attack-a', 'attack-b');
+    defEl.classList.remove('shake');
+  }
+
+  await sleep(700);
+  showResult(script);
+}
+
+function showResult(script) {
+  const isAWin = script.winner === 'A';
+  const winner = isAWin ? monsterA : monsterB;
+
+  document.getElementById('winnerEmoji').textContent = winner.emoji;
+  document.getElementById('winnerText').textContent  = `🏆 ${winner.name} 獲勝！`;
+  document.getElementById('finishMove').textContent  = `💥 終結技：${script.finishMove}`;
+  document.getElementById('resultPanel').style.display = 'block';
+  document.getElementById('battleBtn').textContent = '⚔️ 開打！';
+
+  const log = document.getElementById('battleLog');
+  const fin = document.createElement('div');
+  fin.className   = 'log-entry log-win';
+  fin.textContent = `🎉 ${winner.name} 用終結技終結戰鬥！`;
+  log.appendChild(fin);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── HP 條 ─────────────────────────────────────────────
+function updateHpBars() {
+  const pctA = Math.max(0, Math.round(currentHpA / maxHpA * 100));
+  const pctB = Math.max(0, Math.round(currentHpB / maxHpB * 100));
+  document.getElementById('hpBarA').style.width   = pctA + '%';
+  document.getElementById('hpBarB').style.width   = pctB + '%';
+  document.getElementById('hpTextA').textContent  = `HP: ${currentHpA} / ${maxHpA}`;
+  document.getElementById('hpTextB').textContent  = `HP: ${currentHpB} / ${maxHpB}`;
+}
+
+// ── 名人堂 ────────────────────────────────────────────
+function saveToHall(player) {
+  const monster = player === 'A' ? monsterA : monsterB;
+  if (!monster) return;
+
+  const hall = JSON.parse(localStorage.getItem('monsterHall') || '[]');
+  const dup  = hall.find(m => m.name === monster.name && m.emoji === monster.emoji);
+  if (dup) { alert(`${monster.name} 已在名人堂了！`); return; }
+
+  hall.unshift(monster);
+  if (hall.length > 40) hall.pop();
+  localStorage.setItem('monsterHall', JSON.stringify(hall));
+  renderHall();
+  alert(`${monster.emoji} ${monster.name} 已收藏到名人堂！`);
+}
+
+function renderHall() {
+  const hall = JSON.parse(localStorage.getItem('monsterHall') || '[]');
+  const grid = document.getElementById('hallGrid');
+  if (hall.length === 0) {
+    grid.innerHTML = '<div class="hall-empty">名人堂空空如也，快去合成怪獸吧！</div>';
+    return;
+  }
+  grid.innerHTML = hall.map(m => `
+    <div class="hall-card" title="${m.skill}：${m.description}">
+      <div class="hall-card-emoji">${m.emoji}</div>
+      <div class="hall-card-name">${m.name}</div>
+      <div class="hall-card-hp">HP ${m.hp} · ATK ${m.atk}</div>
+    </div>`).join('');
+}
+
+// ── 重置 ──────────────────────────────────────────────
+function resetGame() {
+  monsterA = null; monsterB = null;
+  ['a1','a2','b1','b2'].forEach(id => document.getElementById(id).value = '');
+  ['A','B'].forEach(p => {
+    document.getElementById('preview' + p).innerHTML =
+      '<span style="color:#333;font-size:0.85rem">輸入詞語後合成</span>';
+    const btn = document.getElementById('synth' + p);
+    btn.disabled    = false;
+    btn.textContent = `⚗️ 合成怪獸 ${p}`;
+  });
+  document.getElementById('battleStage').style.display = 'none';
+  document.getElementById('battleBtn').textContent = '⚔️ 開打！';
+  checkBattleReady();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// 初始化
+renderHall();
+</script>
+</body>
+</html>
